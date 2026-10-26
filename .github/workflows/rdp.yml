@@ -65,69 +65,14 @@ jobs:
           python-version: '3.11.9'
           architecture: 'x64'
 
-      # SYSTEM & PERSISTENCE CONFIGURATION
-      - name: 🔧 CONFIGURING RDP & PERSISTENT SESSION POLICIES
+      # SYSTEM PERFORMANCE OPTIMIZATION
+      - name: ⚡ SYSTEM PERFORMANCE OPTIMIZATION
         run: |
           Write-Host ""
-          Write-Host "🛠️  CONFIGURING RDP & SESSION PERSISTENCE" -ForegroundColor Yellow
+          Write-Host "🛠️  OPTIMIZING SYSTEM PERFORMANCE" -ForegroundColor Yellow
           
           # Boost CPU performance by disabling Defender real-time scanning
           Set-MpPreference -DisableRealtimeMonitoring $true -ErrorAction SilentlyContinue
-          
-          $matKhau = if ("${{ github.event.inputs.password }}") { "${{ github.event.inputs.password }}" } else { "Catizen@" }
-          
-          $steps = @(
-              @{Name="Enable Remote Desktop"; Script={ 
-                  Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0 -Force
-              }},
-              @{Name="Disable Network Level Authentication"; Script={
-                  Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 0 -Force
-              }},
-              @{Name="Configure RDP Security Layer"; Script={
-                  Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "SecurityLayer" -Value 0 -Force
-                  Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 0 -Force
-              }},
-              @{Name="Open Firewall Port 3389"; Script={
-                  netsh advfirewall firewall add rule name="RDP-Premium" dir=in action=allow protocol=TCP localport=3389 2>&1 | Out-Null
-                  netsh advfirewall firewall add rule name="RDP-Premium-Out" dir=out action=allow protocol=TCP localport=3389 2>&1 | Out-Null
-              }},
-              @{Name="Disable Disconnect Signout / Auto-lock"; Script={
-                  Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "MaxDisconnectionTime" -Value 0 -Force
-                  Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "MaxIdleTime" -Value 0 -Force
-                  Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "fResetBroken" -Value 0 -Force
-                  Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "fPromptForPassword" -Value 0 -Force
-              }},
-              @{Name="Configure Auto Admin Logon"; Script={
-                  Set-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon' -Name "AutoAdminLogon" -Value "1" -Force
-                  Set-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon' -Name "DefaultUserName" -Value "Administrator" -Force
-                  Set-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon' -Name "DefaultPassword" -Value $matKhau -Force
-              }},
-              @{Name="Set Terminal Services Policy Overrides"; Script={
-                  $policiesPath = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services'
-                  if (-not (Test-Path $policiesPath)) { New-Item -Path $policiesPath -Force }
-                  Set-ItemProperty -Path $policiesPath -Name "fPromptForPassword" -Value 0 -Force
-                  Set-ItemProperty -Path $policiesPath -Name "MaxDisconnectionTime" -Value 0 -Force
-                  Set-ItemProperty -Path $policiesPath -Name "MaxIdleTime" -Value 0 -Force
-              }},
-              @{Name="Start RDP Services"; Script={
-                  Set-Service -Name TermService -StartupType Automatic -ErrorAction SilentlyContinue
-                  Set-Service -Name UmRdpService -StartupType Automatic -ErrorAction SilentlyContinue
-                  Start-Service -Name TermService -ErrorAction SilentlyContinue
-                  Start-Service -Name UmRdpService -ErrorAction SilentlyContinue
-              }}
-          )
-          
-          # Fix: iterate over $steps (was previously empty $cleanupSteps)
-          foreach($step in $steps) {
-              Write-Host "│ 📋 $($step.Name)..." -NoNewline -ForegroundColor White
-              try {
-                  & $step.Script
-                  Write-Host "`r│ ✅ $($step.Name)" -ForegroundColor Green
-              } catch {
-                  Write-Host "`r│ ⚠️  $($step.Name) - Minor error ignored" -ForegroundColor Yellow
-              }
-              Start-Sleep -Milliseconds 500
-          }
           
           Write-Host "🎯 Configuration completed!" -ForegroundColor Green
 
@@ -162,7 +107,7 @@ jobs:
           Add-Content -Path $env:GITHUB_ENV -Value "RDP_PASS=$matKhau"
           Set-Content -Path "$env:TEMP\rdp_password.txt" -Value $matKhau -Encoding utf8
           
-          Write-Host "✅ Account: $user is ready" -ForegroundColor Green
+          Write-Host "✅ Account: $user with password: $matKhau is ready" -ForegroundColor Green
 
       # TAILSCALE NETWORK SETUP
       - name: 🌐 SETTING UP NETWORK
